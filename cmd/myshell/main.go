@@ -70,7 +70,7 @@ func (s *shell) handleCommand(command string) error {
 		if f, err := os.Stat(parts[1]); err == nil && f.IsDir() {
 			s.pwd = parts[1]
 		} else {
-			fmt.Printf("cd: %s: No such file or directory\n", parts[1])
+			fmt.Println(fmt.Sprintf("cd: %s: No such file or directory", parts[1]))
 		}
 	default:
 		path, _ := os.LookupEnv("PATH")
