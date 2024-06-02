@@ -50,10 +50,7 @@ func handleCommand(command string) error {
 		}
 
 		path, _ := os.LookupEnv("PATH")
-		commandPath, err := locateCommand(parts[1], strings.Split(path, ":"))
-		if err != nil {
-			return fmt.Errorf("error locating command: %w", err)
-		}
+		commandPath := locateCommand(parts[1], strings.Split(path, ":"))
 
 		if commandPath != "" {
 			fmt.Printf("%s is %s\n", parts[1], commandPath)
@@ -62,11 +59,7 @@ func handleCommand(command string) error {
 		}
 	default:
 		path, _ := os.LookupEnv("PATH")
-		commandPath, err := locateCommand(parts[0], strings.Split(path, ":"))
-		if err != nil {
-			return fmt.Errorf("error locating command: %w", err)
-		}
-
+		commandPath := locateCommand(parts[0], strings.Split(path, ":"))
 		if commandPath == "" {
 			fmt.Printf("%s: command not found\n", command)
 			return nil
@@ -82,22 +75,18 @@ func handleCommand(command string) error {
 	return nil
 }
 
-func locateCommand(command string, path []string) (string, error) {
+func locateCommand(command string, path []string) string {
+	// command might be a path to an executable, let's check
+	if f, err := os.Stat(command); err == nil && f.Mode()&0111 != 0 {
+		return command
+	}
+
+	// otherwise, try each directory in the path
 	for _, dir := range path {
-		var found string
-		err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-			if command == path || d != nil && !d.IsDir() && d.Name() == command {
-				found = path
-				return filepath.SkipDir
-			}
-			return nil
-		})
-		if err != nil {
-			return "", fmt.Errorf("error walking directory: %w", err)
-		}
-		if found != "" {
-			return found, nil
+		if f, err := os.Stat(filepath.Join(dir, command)); err == nil && f.Mode()&0111 != 0 {
+			return command
 		}
 	}
-	return "", nil
+
+	return ""
 }
