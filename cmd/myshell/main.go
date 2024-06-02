@@ -12,20 +12,13 @@ import (
 )
 
 func main() {
-	pwd, _ := os.Getwd()
-	s := &shell{pwd}
-
-	if err := s.run(); err != nil {
+	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-type shell struct {
-	pwd string // absolute
-}
-
-func (s *shell) run() error {
+func run() error {
 	for {
 		fmt.Print("$ ")
 
@@ -35,7 +28,7 @@ func (s *shell) run() error {
 		}
 		command = strings.TrimSpace(command)
 
-		if err := s.handleCommand(command); err != nil {
+		if err := handleCommand(command); err != nil {
 			return fmt.Errorf("error handling command: %w", err)
 		}
 	}
@@ -43,7 +36,7 @@ func (s *shell) run() error {
 
 var BUILTINS = []string{"exit", "echo", "type", "pwd"}
 
-func (s *shell) handleCommand(command string) error {
+func handleCommand(command string) error {
 	parts := strings.Split(command, " ")
 	switch parts[0] {
 	case "exit":
@@ -65,13 +58,16 @@ func (s *shell) handleCommand(command string) error {
 			fmt.Printf("%s not found\n", parts[1])
 		}
 	case "pwd":
-		fmt.Println(s.pwd)
+		pwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("error getting working directory: %w", err)
+		}
+		fmt.Println(pwd)
 	case "cd":
 		err := os.Chdir(parts[1])
 		if err != nil {
 			fmt.Printf("%s: No such file or directory\n", parts[1])
 		}
-		s.pwd = parts[1]
 	default:
 		path, _ := os.LookupEnv("PATH")
 		commandPath := locateCommand(parts[0], strings.Split(path, ":"))
@@ -83,7 +79,6 @@ func (s *shell) handleCommand(command string) error {
 		cmd := exec.Command(commandPath, parts[1:]...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stdout
-		cmd.Dir = s.pwd
 		var exitErr *exec.ExitError
 		if err := cmd.Run(); err != nil && !errors.As(err, &exitErr) {
 			return fmt.Errorf("error executing external command: %w", err)
