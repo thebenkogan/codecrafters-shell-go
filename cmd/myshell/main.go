@@ -56,7 +56,7 @@ func handleCommand(command string) error {
 		if commandPath != "" {
 			fmt.Printf("%s is %s\n", parts[1], commandPath)
 		} else {
-			fmt.Printf("%s: command not found\n", parts[1])
+			fmt.Printf("%s not found\n", parts[1])
 		}
 	default:
 		fmt.Printf("%s: command not found\n", command)
