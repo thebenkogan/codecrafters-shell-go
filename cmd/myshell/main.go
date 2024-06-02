@@ -68,7 +68,7 @@ func locateCommand(command string, path []string) (string, error) {
 	for _, dir := range path {
 		var found string
 		err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-			if !d.IsDir() && d.Name() == command {
+			if d != nil && !d.IsDir() && d.Name() == command {
 				found = path
 				return filepath.SkipDir
 			}
