@@ -12,13 +12,20 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	pwd, _ := os.Getwd()
+	s := &shell{pwd}
+
+	if err := s.run(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+type shell struct {
+	pwd string // absolute
+}
+
+func (s *shell) run() error {
 	for {
 		fmt.Print("$ ")
 
@@ -28,7 +35,7 @@ func run() error {
 		}
 		command = strings.TrimSpace(command)
 
-		if err := handleCommand(command); err != nil {
+		if err := s.handleCommand(command); err != nil {
 			return fmt.Errorf("error handling command: %w", err)
 		}
 	}
@@ -36,7 +43,7 @@ func run() error {
 
 var BUILTINS = []string{"exit", "echo", "type", "pwd"}
 
-func handleCommand(command string) error {
+func (s *shell) handleCommand(command string) error {
 	parts := strings.Split(command, " ")
 	switch parts[0] {
 	case "exit":
@@ -56,6 +63,14 @@ func handleCommand(command string) error {
 			fmt.Printf("%s is %s\n", parts[1], commandPath)
 		} else {
 			fmt.Printf("%s not found\n", parts[1])
+		}
+	case "pwd":
+		fmt.Println(s.pwd)
+	case "cd":
+		if f, err := os.Stat(parts[1]); err == nil && f.IsDir() {
+			s.pwd = parts[1]
+		} else {
+			fmt.Printf("cd: %s: No such file or directory\n", parts[1])
 		}
 	default:
 		path, _ := os.LookupEnv("PATH")
