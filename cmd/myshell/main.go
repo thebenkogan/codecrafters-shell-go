@@ -76,16 +76,17 @@ func handleCommand(command string) error {
 }
 
 func locateCommand(command string, path []string) string {
+	// otherwise, try each directory in the path
+	for _, dir := range path {
+		fullpath := filepath.Join(dir, command)
+		if f, err := os.Stat(fullpath); err == nil && f.Mode()&0111 != 0 {
+			return fullpath
+		}
+	}
+
 	// command might be a path to an executable, let's check
 	if f, err := os.Stat(command); err == nil && f.Mode()&0111 != 0 {
 		return command
-	}
-
-	// otherwise, try each directory in the path
-	for _, dir := range path {
-		if f, err := os.Stat(filepath.Join(dir, command)); err == nil && f.Mode()&0111 != 0 {
-			return command
-		}
 	}
 
 	return ""
