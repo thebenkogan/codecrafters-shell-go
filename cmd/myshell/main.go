@@ -68,6 +68,7 @@ func handleCommand(command string) error {
 
 		if commandPath == "" {
 			fmt.Printf("%s: command not found\n", command)
+			return nil
 		}
 
 		cmd := exec.Command(commandPath, parts[1:]...)
