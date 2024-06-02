@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -66,14 +65,14 @@ func handleCommand(command string) error {
 		fmt.Println(pwd)
 	case "cd":
 		if strings.HasPrefix(parts[1], "~") {
-			usr, _ := user.Current()
-			parts[1] = strings.Replace(parts[1], "~", usr.HomeDir, 1)
+			home := os.Getenv("HOME")
+			parts[1] = strings.Replace(parts[1], "~", home, 1)
 		}
 		if err := os.Chdir(parts[1]); err != nil {
 			fmt.Printf("%s: No such file or directory\n", parts[1])
 		}
 	default:
-		path, _ := os.LookupEnv("PATH")
+		path := os.Getenv("PATH")
 		commandPath := locateCommand(parts[0], strings.Split(path, ":"))
 		if commandPath == "" {
 			fmt.Printf("%s: command not found\n", command)
