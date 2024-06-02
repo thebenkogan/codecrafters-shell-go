@@ -34,7 +34,7 @@ func run() error {
 	}
 }
 
-var BUILTINS = []string{"exit", "echo", "type"}
+var BUILTINS = []string{"exit", "echo", "type", "pwd"}
 
 func handleCommand(command string) error {
 	parts := strings.Split(command, " ")
