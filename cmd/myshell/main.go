@@ -33,6 +33,8 @@ func handleCommand(command string) {
 	switch parts[0] {
 	case "exit":
 		os.Exit(0)
+	case "echo":
+		fmt.Println(strings.Join(parts[1:], " "))
 	default:
 		fmt.Printf("%s: command not found\n", command)
 	}
