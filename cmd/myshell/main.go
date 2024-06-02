@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -28,6 +29,8 @@ func run() error {
 	}
 }
 
+var BUILTINS = []string{"exit", "echo", "type"}
+
 func handleCommand(command string) {
 	parts := strings.Split(command, " ")
 	switch parts[0] {
@@ -35,6 +38,12 @@ func handleCommand(command string) {
 		os.Exit(0)
 	case "echo":
 		fmt.Println(strings.Join(parts[1:], " "))
+	case "type":
+		if slices.Contains(BUILTINS, parts[1]) {
+			fmt.Printf("%s is a shell builtin\n", parts[1])
+		} else {
+			fmt.Printf("%s not found\n", parts[1])
+		}
 	default:
 		fmt.Printf("%s: command not found\n", command)
 	}
