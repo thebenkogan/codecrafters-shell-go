@@ -67,12 +67,11 @@ func (s *shell) handleCommand(command string) error {
 	case "pwd":
 		fmt.Println(s.pwd)
 	case "cd":
-		if f, err := os.Stat(parts[1]); err == nil && f.IsDir() {
-			s.pwd = parts[1]
-		} else {
-			s := fmt.Sprintf("cd: %s: No such file or directory", parts[1])
-			fmt.Print(s + "\n")
+		err := os.Chdir(parts[1])
+		if err != nil {
+			fmt.Printf("%s: No such file or directory\n", parts[1])
 		}
+		s.pwd = parts[1]
 	default:
 		path, _ := os.LookupEnv("PATH")
 		commandPath := locateCommand(parts[0], strings.Split(path, ":"))
