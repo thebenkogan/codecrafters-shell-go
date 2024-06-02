@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -59,7 +60,21 @@ func handleCommand(command string) error {
 			fmt.Printf("%s not found\n", parts[1])
 		}
 	default:
-		fmt.Printf("%s: command not found\n", command)
+		path, _ := os.LookupEnv("PATH")
+		commandPath, err := locateCommand(parts[0], strings.Split(path, ":"))
+		if err != nil {
+			return fmt.Errorf("error locating command: %w", err)
+		}
+
+		if commandPath == "" {
+			fmt.Printf("%s: command not found\n", command)
+		}
+
+		cmd := exec.Command(commandPath, parts[1:]...)
+		cmd.Stdout = os.Stdout
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("error executing external command: %w", err)
+		}
 	}
 	return nil
 }
