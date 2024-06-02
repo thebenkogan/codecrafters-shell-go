@@ -34,7 +34,7 @@ func run() error {
 	}
 }
 
-var BUILTINS = []string{"exit", "echo", "type", "pwd"}
+var BUILTINS = []string{"exit", "echo", "type", "pwd", "cd"}
 
 func handleCommand(command string) error {
 	parts := strings.Split(command, " ")
@@ -44,50 +44,67 @@ func handleCommand(command string) error {
 	case "echo":
 		fmt.Println(strings.Join(parts[1:], " "))
 	case "type":
-		if slices.Contains(BUILTINS, parts[1]) {
-			fmt.Printf("%s is a shell builtin\n", parts[1])
-			return nil
-		}
-
-		path, _ := os.LookupEnv("PATH")
-		commandPath := locateCommand(parts[1], strings.Split(path, ":"))
-
-		if commandPath != "" {
-			fmt.Printf("%s is %s\n", parts[1], commandPath)
-		} else {
-			fmt.Printf("%s not found\n", parts[1])
-		}
+		handleType(parts)
 	case "pwd":
-		pwd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("error getting working directory: %w", err)
-		}
-		fmt.Println(pwd)
+		return handlePwd()
 	case "cd":
-		if strings.HasPrefix(parts[1], "~") {
-			home := os.Getenv("HOME")
-			parts[1] = strings.Replace(parts[1], "~", home, 1)
-		}
-		if err := os.Chdir(parts[1]); err != nil {
-			fmt.Printf("%s: No such file or directory\n", parts[1])
-		}
+		handleCd(parts)
 	default:
-		path := os.Getenv("PATH")
-		commandPath := locateCommand(parts[0], strings.Split(path, ":"))
-		if commandPath == "" {
-			fmt.Printf("%s: command not found\n", command)
-			return nil
-		}
-
-		cmd := exec.Command(commandPath, parts[1:]...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stdout
-		var exitErr *exec.ExitError
-		if err := cmd.Run(); err != nil && !errors.As(err, &exitErr) {
-			return fmt.Errorf("error executing external command: %w", err)
-		}
+		return handleExternal(parts)
 	}
 	return nil
+}
+
+func handleExternal(command []string) error {
+	path := os.Getenv("PATH")
+	commandPath := locateCommand(command[0], strings.Split(path, ":"))
+	if commandPath == "" {
+		fmt.Printf("%s: command not found\n", command[0])
+		return nil
+	}
+
+	cmd := exec.Command(commandPath, command[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	var exitErr *exec.ExitError
+	if err := cmd.Run(); err != nil && !errors.As(err, &exitErr) {
+		return fmt.Errorf("error executing external command: %w", err)
+	}
+	return nil
+}
+
+func handleType(command []string) {
+	if slices.Contains(BUILTINS, command[1]) {
+		fmt.Printf("%s is a shell builtin\n", command[1])
+	}
+
+	path, _ := os.LookupEnv("PATH")
+	commandPath := locateCommand(command[1], strings.Split(path, ":"))
+
+	if commandPath != "" {
+		fmt.Printf("%s is %s\n", command[1], commandPath)
+	} else {
+		fmt.Printf("%s not found\n", command[1])
+	}
+}
+
+func handlePwd() error {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting working directory: %w", err)
+	}
+	fmt.Println(pwd)
+	return nil
+}
+
+func handleCd(command []string) {
+	if strings.HasPrefix(command[1], "~") {
+		home := os.Getenv("HOME")
+		command[1] = strings.Replace(command[1], "~", home, 1)
+	}
+	if err := os.Chdir(command[1]); err != nil {
+		fmt.Printf("%s: No such file or directory\n", command[1])
+	}
 }
 
 func locateCommand(command string, path []string) string {
