@@ -64,8 +64,7 @@ func handleCommand(command string) error {
 		}
 		fmt.Println(pwd)
 	case "cd":
-		err := os.Chdir(parts[1])
-		if err != nil {
+		if err := os.Chdir(parts[1]); err != nil {
 			fmt.Printf("%s: No such file or directory\n", parts[1])
 		}
 	default:
