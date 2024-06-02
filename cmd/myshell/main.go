@@ -67,6 +67,7 @@ func handleCommand(command string) error {
 
 		cmd := exec.Command(commandPath, parts[1:]...)
 		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stdout
 		var exitErr *exec.ExitError
 		if err := cmd.Run(); err != nil && !errors.As(err, &exitErr) {
 			return fmt.Errorf("error executing external command: %w", err)
